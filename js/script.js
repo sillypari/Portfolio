@@ -53,11 +53,12 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 const navbar = document.querySelector('.navbar');
 let lastScroll = 0;
 
-window.addEventListener('scroll', () => {
+const updateNavbarStyles = () => {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
     const currentScroll = window.pageYOffset;
     
     if (currentScroll <= 0) {
-        navbar.style.background = 'rgba(255, 255, 255, 0.95)';
+        navbar.style.background = currentTheme === 'dark' ? 'rgba(17, 24, 39, 0.95)' : 'rgba(255, 255, 255, 0.95)';
         navbar.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)';
         return;
     }
@@ -68,11 +69,27 @@ window.addEventListener('scroll', () => {
     } else {
         // Scrolling up
         navbar.style.transform = 'translateY(0)';
-        navbar.style.background = 'rgba(255, 255, 255, 0.98)';
-        navbar.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+        navbar.style.background = currentTheme === 'dark' ? 'rgba(17, 24, 39, 0.98)' : 'rgba(255, 255, 255, 0.98)';
+        navbar.style.boxShadow = currentTheme === 'dark' ? '0 4px 6px -1px rgba(0, 0, 0, 0.3)' : '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
     }
     
     lastScroll = currentScroll;
+};
+
+window.addEventListener('scroll', updateNavbarStyles);
+
+// Observe theme changes to update navbar styles
+const themeObserver = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'data-theme') {
+            updateNavbarStyles();
+        }
+    });
+});
+
+themeObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-theme']
 });
 
 // Theme Toggle Functionality
@@ -80,17 +97,20 @@ const themeToggle = document.querySelector('.theme-toggle');
 const themeIcon = themeToggle.querySelector('i');
 const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
 
-// Check for saved user preference, if any, on load of the website
+// Set dark theme as default
 const currentTheme = localStorage.getItem('theme');
-if (currentTheme === 'dark' || (!currentTheme && prefersDarkScheme.matches)) {
-    document.documentElement.setAttribute('data-theme', 'dark');
-    themeIcon.classList.remove('fa-moon');
-    themeIcon.classList.add('fa-sun');
-} else {
+if (currentTheme === 'light') {
     document.documentElement.setAttribute('data-theme', 'light');
     themeIcon.classList.remove('fa-sun');
     themeIcon.classList.add('fa-moon');
+} else {
+    // Default to dark theme if no preference or if preference is dark
+    document.documentElement.setAttribute('data-theme', 'dark');
+    localStorage.setItem('theme', 'dark');
+    themeIcon.classList.remove('fa-moon');
+    themeIcon.classList.add('fa-sun');
 }
+updateNavbarStyles(); // Update navbar for initial theme
 
 // Toggle theme on button click
 themeToggle.addEventListener('click', () => {
@@ -106,6 +126,9 @@ themeToggle.addEventListener('click', () => {
         themeIcon.classList.add('fa-sun');
         localStorage.setItem('theme', 'dark');
     }
+    
+    // Update navbar styles after theme change
+    updateNavbarStyles();
 });
 
 // Typewriter Effect for Name
